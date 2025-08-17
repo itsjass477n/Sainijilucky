@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Push Notification Demo</title>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<style>
+body { font-family: Arial; padding: 20px; }
+button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+#messages { margin-top: 20px; }
+.message { border: 1px solid #ddd; padding: 8px; margin: 5px 0; border-radius: 5px; }
+</style>
+</head>
+<body>
+
+<h2>Push Notification Demo</h2>
+<button id="enableNotify">Enable Notifications</button>
+<br>
+<input type="text" id="msgInput" placeholder="Enter notification message">
+<button id="sendBtn">Send Notification</button>
+
+<div id="messages"></div>
+
+<script>
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDsm1U6e-4ZTi0WGBAbj1LUWOA63xpQVD0",
+  authDomain: "js-world-64c90.firebaseapp.com",
+  databaseURL: "https://js-world-64c90-default-rtdb.firebaseio.com",
+  projectId: "js-world-64c90",
+  storageBucket: "js-world-64c90.firebasestorage.app",
+  messagingSenderId: "240128005952",
+  appId: "1:240128005952:android:b7f1a21647514efbe80ca5"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Elements
+const enableBtn = document.getElementById("enableNotify");
+const sendBtn = document.getElementById("sendBtn");
+const msgInput = document.getElementById("msgInput");
+const messagesDiv = document.getElementById("messages");
+
+// Enable notifications
+enableBtn.onclick = () => {
+  Notification.requestPermission().then(permission => {
+    if(permission === "granted"){
+      alert("Notifications enabled!");
+    } else {
+      alert("You denied notifications.");
+    }
+  });
+};
+
+// Send notification (push to Firebase)
+sendBtn.onclick = () => {
+  const msg = msgInput.value.trim();
+  if(!msg) return alert("Enter a message!");
+  const key = db.ref("notifications").push().key;
+  db.ref("notifications/" + key).set({
+    message: msg,
+    timestamp: Date.now()
+  });
+  msgInput.value = "";
+};
+
+// Listen for notifications
+db.ref("notifications").on("child_added", snapshot => {
+  const data = snapshot.val();
+  if(Notification.permission === "granted"){
+    new Notification("New Notification", {
+      body: data.message,
+      icon: "https://img.icons8.com/color/48/000000/appointment-reminders.png"
+    });
+  }
+
+  // Also display in page
+  const div = document.createElement("div");
+  div.className = "message";
+  div.innerText = data.message;
+  messagesDiv.prepend(div);
+});
+</script>
+
+</body>
+</html>
